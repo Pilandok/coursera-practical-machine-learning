@@ -38,7 +38,8 @@ svmmodel
 rfpred <- predict(rfmodel, testing)
 gbmpred <- predict(gbmmodel, testing)
 ldapred <- predict(ldamodel, testing)
-
+#gbmAccuracy 0.9624796
+#ldaAccuracy 0.7065661
 confusionMatrix(testing$classe, rfpred)$overall["Accuracy"]
 confusionMatrix(testing$classe, gbmpred)$overall["Accuracy"]
 confusionMatrix(testing$classe, ldapred)$overall["Accuracy"]
