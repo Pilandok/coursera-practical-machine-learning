@@ -1,0 +1,91 @@
+---
+title: "Analysis of Weight Lifting Motion Data"
+author: "Odin Matanguihan"
+date: "May 24, 2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(caret)
+library(randomForest)
+library(e1071)
+```
+
+## Analysis of Weight Lifting Motion Data
+
+# Background
+
+Using devices such as Jawbone Up, Nike FuelBand, and Fitbit it is now possible to collect a large amount of data about personal activity relatively inexpensively. These type of devices are part of the quantified self movement - a group of enthusiasts who take measurements about themselves regularly to improve their health, to find patterns in their behavior, or because they are tech geeks. One thing that people regularly do is quantify how much of a particular activity they do, but they rarely quantify how well they do it. In this project, your goal will be to use data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants. They were asked to perform barbell lifts correctly and incorrectly in 5 different ways. More information is available from the website here: http://groupware.les.inf.puc-rio.br/har (see the section on the Weight Lifting Exercise Dataset).
+
+# Data
+
+The training data for this project are available here:
+
+https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv
+
+The test data are available here:
+
+https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv
+
+#Preprocessing
+
+```{r}
+
+dat <- read.csv("pml-training.csv")
+
+```
+
+On initial inspection, the data is found to have rows with lots of NA's.  Apparently the first such row has mostly NA's.
+
+```{r}
+sum(is.na(dat$max_roll_belt))/nrow(dat)
+```
+
+With over 97% of the rows containing NA's, this will not make a good predictor.  All such rows are removed from the initial data set.
+
+```{r}
+toomuchNA <- apply(dat, 2, function(x) sum(is.na(x)))/nrow(dat)>.96
+dat <- dat[,!toomuchNA]
+nrow(dat)
+names(dat)
+```
+
+This still leaves us with a lot of columns that are unlikely to prove useful.  We next remove the ones with little variance.  The first 6 rows are also obviously not good predictors, so they are removed as well.
+
+```{r}
+nzvval <- nearZeroVar(dat, saveMetrics= TRUE)$nzv
+dat <- dat[,!nzvval]
+dat <- dat[,7:ncol(dat)]
+ncol(dat)
+```
+
+That still leaves us with 53 columns.  A using PCA, it is determined that we need less than that to account for most of the variance.  Only the columns with the top 36 variance is retained along with the classe column.
+
+```{r}
+preProcess(dat, method = "pca", thresh = 0.95)
+preProcess(dat, method = "pca", thresh = 0.99)
+ordered.var <- order(apply(dat, 2, var))
+ordered.var[37] <- 53
+dat <- dat[,ordered.var[1:37]]
+names(dat)
+```
+
+
+set.seed(300)
+inTrain = createDataPartition(dat$classe, p = 3/4)[[1]]
+training = dat[ inTrain,]
+testing = dat[-inTrain,]
+
+
+
+
+
+
+
+
+
+
+
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
