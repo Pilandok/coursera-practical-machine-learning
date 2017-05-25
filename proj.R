@@ -4,7 +4,7 @@ install.packages("e1071")
 library(caret)
 library(randomForest)
 library(e1071)
-testing <- read.csv("pml-testing.csv")
+validation <- read.csv("pml-testing.csv")
 dat <- read.csv("pml-training.csv")
 
 
@@ -13,9 +13,13 @@ toomuchNA <- apply(dat, 2, function(x) sum(is.na(x)))/nrow(dat)>.96
 dat <- dat[,!toomuchNA]
 nzvval <- nearZeroVar(dat, saveMetrics= TRUE)$nzv
 dat <- dat[,!nzvval]
-dat <- dat[,7:59]
-dat <- dat[,-6]
-
+dat <- dat[,7:ncol(dat)]
+#dat <- dat[,-6]
+preProcess(dat, method = "pca", thresh = 0.95)
+preProcess(dat, method = "pca", thresh = 0.99)
+ordered.var <- order(apply(dat, 2, var))
+ordered.var[37] <- 53
+dat <- dat[,ordered.var[1:37]]
 
 
 
@@ -32,11 +36,10 @@ pcamodel <- train(classe~., data = training, method = "pca", thresh = 0.95)
 
 
 rfmodel <- train(classe~., data = training,method = 'rf', do.trace = FALSE)
+rpartmodel <- train(classe~., data = training, method = 'rpart')
 rfmodel <- randomForest(classe~., data = training)
 gbmmodel <- train(classe~., data = training, method = 'gbm')
 ldamodel <- train(classe~., data = training, method = 'lda')
-rpartmodel <- train(classe~., data = training, method = 'rpart')
-
 rfpred <- predict(rfmodel, testing)
 gbmpred <- predict(gbmmodel, testing)
 ldapred <- predict(ldamodel, testing)
@@ -49,6 +52,12 @@ confusionMatrix(testing$classe, gbmpred)$overall["Accuracy"]
 confusionMatrix(testing$classe, ldapred)$overall["Accuracy"]
 confusionMatrix(testing$classe, rpartpred)$overall["Accuracy"]
 
+#36 predictors
+#0.9949021 
+#0.9530995
+#0.5858483 
+#0.4416803 
+
 #stack the predictions
 
 combpred <- data.frame(classe = testing$classe, rfpred, gbmpred, ldapred)
@@ -57,3 +66,4 @@ rfcombpred <- predict(rfcombmod, combpred)
 rfcombpred <- predict(rfcombmod, combpred)
 confusionMatrix(testing$classe, rfcombpred)$overall["Accuracy"]
 #Accuracy:  0.997553
+predict(validation, rfpred)
