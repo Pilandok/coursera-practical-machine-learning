@@ -49,8 +49,6 @@ With over 97% of the rows containing NA's, this will not make a good predictor. 
 ```{r}
 toomuchNA <- apply(dat, 2, function(x) sum(is.na(x)))/nrow(dat)>.96
 dat <- dat[,!toomuchNA]
-nrow(dat)
-names(dat)
 ```
 
 This still leaves us with a lot of columns that are unlikely to prove useful.  We next remove the ones with little variance.  The first 6 rows are also obviously not good predictors, so they are removed as well.
@@ -59,7 +57,6 @@ This still leaves us with a lot of columns that are unlikely to prove useful.  W
 nzvval <- nearZeroVar(dat, saveMetrics= TRUE)$nzv
 dat <- dat[,!nzvval]
 dat <- dat[,7:ncol(dat)]
-ncol(dat)
 ```
 
 That still leaves us with 53 columns.  A using PCA, it is determined that we need less than that to account for most of the variance.  Only the columns with the top 36 variance is retained along with the classe column.
@@ -70,12 +67,11 @@ preProcess(dat, method = "pca", thresh = 0.99)
 ordered.var <- order(apply(dat, 2, var))
 ordered.var[37] <- 53
 dat <- dat[,ordered.var[1:37]]
-names(dat)
 ```
 
 Next, the data is divided into training and testing subsets.  The testing file provided is for validation.
 
-```{4}
+```{r}
 set.seed(300)
 inTrain = createDataPartition(dat$classe, p = 3/4)[[1]]
 training = dat[ inTrain,]
@@ -86,7 +82,7 @@ testing = dat[-inTrain,]
 
 Four different models are fitted for this exercise.  Namely recursive partitioning(rpart), random forest, boosted(gbm), and lda.
 
-```{r}
+```{r results = 'hide'}
 rpartmodel <- train(classe~., data = training, method = 'rpart')
 rfmodel <- randomForest(classe~., data = training)
 gbmmodel <- train(classe~., data = training, method = 'gbm')
@@ -109,13 +105,13 @@ confusionMatrix(testing$classe, ldapred)$overall["Accuracy"]
 confusionMatrix(testing$classe, rpartpred)$overall["Accuracy"]
 ```
 
-Random forest proved to have the highest accuracy.  With sufficient accuracy achieved, and with no changes or additional steps taken in fitting the model taken, additional levels of cross validation will not be necessary.  The testing set is sufficient.
+Random forest proved to have the highest accuracy.  With sufficient accuracy achieved, and with no changes or additional steps taken in fitting the model taken, additional levels of cross validation will not be necessary.  The random forest model is expected to generalize well with the given accuracy.
 
 Next we try to fit the model on the testing set provided.
 
 ```{r}
 validation <- read.csv("pml-testing.csv")
-predict(validation, rfpred)
+predict(rfmodel, validation)
 ```
 
 The results above scored well with the quiz grader.
